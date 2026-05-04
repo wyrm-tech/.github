@@ -97,10 +97,16 @@ fi
 persist_brew_env_for_user_shell
 
 # Install all Homebrew packages from Brewfile
-if [[ -f "setup/Brewfile" ]]; then
+brewfile_tmp="$(mktemp "${TMPDIR:-/tmp}/wyrmtech-brewfile.XXXXXX")"
+trap 'rm -f "$brewfile_tmp"' EXIT
+
+curl -fsSL https://raw.githubusercontent.com/wyrmtech/.github/main/setup/Brewfile -o "$brewfile_tmp"
+
+if brew bundle check --file="$brewfile_tmp" >/dev/null 2>&1; then
+  echo "✓ Homebrew packages already installed"
+else
   echo "Installing Homebrew packages from Brewfile..."
-  curl -fsSL https://raw.githubusercontent.com/wyrmtech/.github-private/main/setup/Brewfile -o setup/Brewfile
-  brew bundle --file=setup/Brewfile
+  brew bundle --file="$brewfile_tmp"
 fi
 
 echo "✓ Installation complete"

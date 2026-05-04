@@ -10,15 +10,20 @@ $ErrorActionPreference = "Stop"
 Write-Host "Installing dependencies..." -ForegroundColor Green
 
 # Install winget packages
-$wingetJson = Join-Path $PSScriptRoot "winget.json"
-if (Test-Path $wingetJson) {
-  Write-Host "Installing packages from winget.json..." -ForegroundColor Cyan
-  winget import --import-file $wingetJson --accept-package-agreements --accept-source-agreements
+$wingetUrl = "https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/winget.json"
+$wingetJson = Join-Path $env:TEMP "winget.json"
+
+Write-Host "Downloading winget.json from GitHub..." -ForegroundColor Cyan
+try {
+  Invoke-WebRequest -Uri $wingetUrl -OutFile $wingetJson
 }
-else {
-  Write-Host "✗ winget.json not found at $wingetJson" -ForegroundColor Red
+catch {
+  Write-Host "✗ Failed to download winget.json: $_" -ForegroundColor Red
   exit 1
 }
+
+Write-Host "Installing packages from winget.json..." -ForegroundColor Cyan
+winget import --import-file $wingetJson --accept-package-agreements --accept-source-agreements
 
 Write-Host "Installing Basecamp and Clerk CLIs..." -ForegroundColor Green
 
