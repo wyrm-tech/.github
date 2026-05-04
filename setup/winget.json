@@ -1,0 +1,31 @@
+{
+  "$schema": "https://aka.ms/winget-packages.schema.2.0.json",
+  "CreationDate": "2026-05-04T00:00:00.000-00:00",
+  "Sources": [
+    {
+      "SourceDetails": {
+        "Argument": "https://cdn.winget.microsoft.com/cache",
+        "Identifier": "Microsoft.Winget.Source_8wekyb3d8bbwe",
+        "Name": "winget",
+        "Type": "Microsoft.PreIndexed.Package"
+      },
+      "Packages": [
+        { "PackageIdentifier": "Amazon.AWSCLI" },
+        { "PackageIdentifier": "Amazon.SessionManagerPlugin" },
+        { "PackageIdentifier": "Docker.DockerDesktop" },
+        { "PackageIdentifier": "Git.Git" },
+        { "PackageIdentifier": "GitHub.cli" },
+        { "PackageIdentifier": "GitHub.GitHubDesktop" },
+        { "PackageIdentifier": "HashiCorp.Terraform" },
+        { "PackageIdentifier": "jqlang.jq" },
+        { "PackageIdentifier": "Microsoft.VisualStudioCode" },
+        { "PackageIdentifier": "Microsoft.WSL" },
+        { "PackageIdentifier": "MongoDB.Compass.Community" },
+        { "PackageIdentifier": "CoreyButler.NVMforWindows" },
+        { "PackageIdentifier": "ngrok.ngrok" },
+        { "PackageIdentifier": "Postman.Postman" },
+        { "PackageIdentifier": "Stripe.StripeCLI" }
+      ]
+    }
+  ]
+}
