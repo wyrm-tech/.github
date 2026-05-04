@@ -100,7 +100,7 @@ persist_brew_env_for_user_shell
 brewfile_tmp="$(mktemp "${TMPDIR:-/tmp}/wyrmtech-brewfile.XXXXXX")"
 trap 'rm -f "$brewfile_tmp"' EXIT
 
-curl -fsSL https://raw.githubusercontent.com/wyrmtech/.github/main/setup/Brewfile -o "$brewfile_tmp"
+curl -fsSL https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/Brewfile -o "$brewfile_tmp"
 
 if brew bundle check --file="$brewfile_tmp" >/dev/null 2>&1; then
   echo "✓ Homebrew packages already installed"
