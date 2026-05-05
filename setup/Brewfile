@@ -1,7 +1,6 @@
 tap "basecamp/tap"
 tap "clerk/stable"
 tap "stripe/stripe-cli"
-brew "argocd"
 brew "awscli"
 brew "gh"
 brew "git"
