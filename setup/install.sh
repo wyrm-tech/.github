@@ -6,6 +6,21 @@ set -euo pipefail
 
 echo "Starting installations..."
 
+# Install Xcode Command Line Tools on macOS (required for Homebrew and most dev tools)
+if [[ "$OSTYPE" == "darwin"* ]]; then
+  if ! xcode-select -p &> /dev/null; then
+    echo "Installing Xcode Command Line Tools..."
+    xcode-select --install
+    # Wait for installation to complete before proceeding
+    until xcode-select -p &> /dev/null; do
+      sleep 5
+    done
+    echo "✓ Xcode Command Line Tools installed"
+  else
+    echo "✓ Xcode Command Line Tools already installed"
+  fi
+fi
+
 setup_brew_env() {
   # Support Homebrew locations across Apple Silicon, Intel macOS, and Linuxbrew.
   local brew_bin=""
@@ -96,9 +111,71 @@ fi
 
 persist_brew_env_for_user_shell
 
+persist_goenv_init_for_user_shell() {
+  local shell_name=""
+  local target_file=""
+  local goenv_init_line='eval "$(goenv init -)"'
+
+  if ! command -v goenv &> /dev/null; then
+    return
+  fi
+
+  shell_name="$(basename "${SHELL:-}")"
+
+  if [[ "$shell_name" == "zsh" ]]; then
+    target_file="$HOME/.zshrc"
+  elif [[ "$shell_name" == "bash" ]]; then
+    # Prefer bash_profile over bashrc to avoid initialization loops on some systems.
+    target_file="$HOME/.bash_profile"
+  else
+    target_file="$HOME/.profile"
+  fi
+
+  if [[ ! -f "$target_file" ]]; then
+    touch "$target_file"
+  fi
+
+  if ! grep -Fq "$goenv_init_line" "$target_file"; then
+    {
+      echo ""
+      echo "# Added by WyrmTech setup"
+      echo "$goenv_init_line"
+    } >> "$target_file"
+    echo "Added goenv init to $target_file"
+  fi
+}
+
+install_latest_go_with_goenv() {
+  local latest_go_version=""
+
+  if ! command -v goenv &> /dev/null; then
+    echo "⚠ goenv not found - skipping Go installation"
+    return
+  fi
+
+  latest_go_version="$(goenv install -l | sed 's/^[[:space:]]*//' | grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' | sort -V | tail -n 1)"
+
+  if [[ -z "$latest_go_version" ]]; then
+    echo "⚠ Could not determine latest Go version from goenv"
+    return
+  fi
+
+  if goenv versions --bare | grep -Fxq "$latest_go_version"; then
+    echo "✓ Go ${latest_go_version} already installed via goenv"
+  else
+    echo "Installing Go ${latest_go_version} via goenv..."
+    goenv install "$latest_go_version"
+  fi
+
+  goenv global "$latest_go_version"
+  goenv rehash
+  echo "✓ Set global Go version to ${latest_go_version}"
+}
+
 # Install all Homebrew packages from Brewfile
 brewfile_tmp="$(mktemp "${TMPDIR:-/tmp}/wyrmtech-brewfile.XXXXXX")"
-trap 'rm -f "$brewfile_tmp"' EXIT
+go_brewfile_tmp="$(mktemp "${TMPDIR:-/tmp}/wyrmtech-go-brewfile.XXXXXX")"
+trap 'rm -f "$brewfile_tmp" "$go_brewfile_tmp"' EXIT
 
 curl -fsSL https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/Brewfile -o "$brewfile_tmp"
 
@@ -107,6 +184,19 @@ if brew bundle check --file="$brewfile_tmp" >/dev/null 2>&1; then
 else
   echo "Installing Homebrew packages from Brewfile..."
   brew bundle --file="$brewfile_tmp"
+fi
+
+persist_goenv_init_for_user_shell
+install_latest_go_with_goenv
+
+# Install Go-based tools only after goenv has installed and configured Go.
+curl -fsSL https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/Brewfile.goinstalls -o "$go_brewfile_tmp"
+
+if brew bundle check --file="$go_brewfile_tmp" >/dev/null 2>&1; then
+  echo "✓ Go Brewfile tools already installed"
+else
+  echo "Installing Go tools from Brewfile.goinstalls..."
+  brew bundle --file="$go_brewfile_tmp"
 fi
 
 echo "✓ Installation complete"

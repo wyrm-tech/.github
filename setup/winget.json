@@ -23,6 +23,7 @@
         { "PackageIdentifier": "MongoDB.Compass.Community" },
         { "PackageIdentifier": "CoreyButler.NVMforWindows" },
         { "PackageIdentifier": "ngrok.ngrok" },
+        { "PackageIdentifier": "OpenAI.Codex" },
         { "PackageIdentifier": "Postman.Postman" },
         { "PackageIdentifier": "Stripe.StripeCLI" }
       ]

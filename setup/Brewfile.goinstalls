@@ -1,0 +1,2 @@
+go "golang.org/x/tools/gopls"
+go "honnef.co/go/tools/cmd/staticcheck"

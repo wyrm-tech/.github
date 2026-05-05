@@ -62,3 +62,51 @@ else {
 }
 
 Write-Host "✓ CLI installation complete" -ForegroundColor Green
+
+# Install VS Code extensions
+Write-Host "Installing VS Code extensions..." -ForegroundColor Green
+
+if (-not (Get-Command code -ErrorAction SilentlyContinue)) {
+  Write-Host "⚠ 'code' command not found — skipping VS Code extensions. Make sure VS Code is installed and added to PATH." -ForegroundColor Yellow
+}
+else {
+  $extensions = @(
+    "42crunch.vscode-openapi",
+    "angular.ng-template",
+    "bradlc.vscode-tailwindcss",
+    "danielgavin.ols",
+    "docker.docker",
+    "esbenp.prettier-vscode",
+    "f-loat.jsonl-converter",
+    "github.vscode-github-actions",
+    "golang.go",
+    "hashicorp.hcl",
+    "hashicorp.terraform",
+    "ms-azuretools.vscode-containers",
+    "ms-azuretools.vscode-docker",
+    "ms-python.autopep8",
+    "ms-python.debugpy",
+    "ms-python.python",
+    "ms-python.vscode-pylance",
+    "ms-python.vscode-python-envs",
+    "ms-vscode-remote.remote-containers",
+    "ms-vscode.live-server",
+    "ms-vscode.makefile-tools",
+    "redhat.vscode-yaml",
+    "timheuer.awesome-copilot"
+  )
+
+  foreach ($ext in $extensions) {
+    Write-Host "Installing $ext..." -ForegroundColor Cyan
+    code --install-extension $ext --force
+  }
+
+  Write-Host "✓ VS Code extensions installed" -ForegroundColor Green
+}
+
+Write-Host "Installing Go version manager (gvm)..." -ForegroundColor Green
+
+[Net.ServicePointManager]::SecurityProtocol = "tls12"
+Invoke-WebRequest -URI https://github.com/andrewkroh/gvm/releases/download/v0.6.0/gvm-windows-amd64.exe -Outfile C:\Windows\System32\gvm.exe
+gvm --format=powershell 1.26.1 | Invoke-Expression
+go version
