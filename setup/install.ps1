@@ -45,6 +45,52 @@ function Install-LatestNodeWithNvm {
   }
 }
 
+function Sync-CodexRules {
+  $sourceRulesUrl = "https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/.codex/rules/default.rules"
+  $sourceRules = Join-Path $env:TEMP "codex-default.rules"
+  $targetRulesDir = Join-Path $HOME ".codex\rules"
+  $targetRules = Join-Path $targetRulesDir "default.rules"
+
+  try {
+    Invoke-WebRequest -Uri $sourceRulesUrl -OutFile $sourceRules
+  }
+  catch {
+    Write-Host "⚠ Failed to download Codex rules from $sourceRulesUrl — skipping Codex rules sync" -ForegroundColor Yellow
+    return
+  }
+
+  New-Item -ItemType Directory -Path $targetRulesDir -Force | Out-Null
+
+  if (-not (Test-Path $targetRules)) {
+    New-Item -ItemType File -Path $targetRules -Force | Out-Null
+  }
+
+  $existingLines = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::Ordinal)
+  Get-Content -Path $targetRules | ForEach-Object {
+    [void]$existingLines.Add($_)
+  }
+
+  $addedCount = 0
+  Get-Content -Path $sourceRules | ForEach-Object {
+    $line = $_
+    if (-not [string]::IsNullOrWhiteSpace($line)) {
+      if ($existingLines.Add($line)) {
+        Add-Content -Path $targetRules -Value $line
+        $addedCount++
+      }
+    }
+  }
+
+  if ($addedCount -gt 0) {
+    Write-Host "✓ Added $addedCount Codex rule(s) to $targetRules" -ForegroundColor Green
+  }
+  else {
+    Write-Host "✓ Codex rules already up to date" -ForegroundColor Green
+  }
+
+  Remove-Item -Path $sourceRules -ErrorAction SilentlyContinue
+}
+
 Write-Host "Installing dependencies..." -ForegroundColor Green
 
 # Install winget packages
@@ -62,6 +108,7 @@ catch {
 
 Write-Host "Installing packages from winget.json..." -ForegroundColor Cyan
 winget import --import-file $wingetJson --accept-package-agreements --accept-source-agreements
+Sync-CodexRules
 
 Sync-Path
 

@@ -145,6 +145,44 @@ persist_goenv_init_for_user_shell() {
   fi
 }
 
+sync_codex_rules() {
+  local source_url="https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/.codex/rules/default.rules"
+  local source_rules_tmp=""
+  local target_rules_dir="$HOME/.codex/rules"
+  local target_rules="$target_rules_dir/default.rules"
+  local added_count=0
+
+  source_rules_tmp="$(mktemp "${TMPDIR:-/tmp}/wyrmtech-codex-rules.XXXXXX")"
+
+  if ! curl -fsSL "$source_url" -o "$source_rules_tmp"; then
+    echo "⚠ Failed to download Codex rules from $source_url - skipping Codex rules sync"
+    rm -f "$source_rules_tmp"
+    return
+  fi
+
+  mkdir -p "$target_rules_dir"
+  touch "$target_rules"
+
+  while IFS= read -r line || [[ -n "$line" ]]; do
+    if [[ -z "$line" ]]; then
+      continue
+    fi
+
+    if ! grep -Fqx "$line" "$target_rules"; then
+      echo "$line" >> "$target_rules"
+      added_count=$((added_count + 1))
+    fi
+  done < "$source_rules_tmp"
+
+  rm -f "$source_rules_tmp"
+
+  if [[ $added_count -gt 0 ]]; then
+    echo "✓ Added $added_count Codex rule(s) to $target_rules"
+  else
+    echo "✓ Codex rules already up to date"
+  fi
+}
+
 install_latest_go_with_goenv() {
   local latest_go_version=""
 
@@ -188,6 +226,7 @@ fi
 
 persist_goenv_init_for_user_shell
 install_latest_go_with_goenv
+sync_codex_rules
 
 # Install Go-based tools only after goenv has installed and configured Go.
 curl -fsSL https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/Brewfile.goinstalls -o "$go_brewfile_tmp"
