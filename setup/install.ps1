@@ -91,6 +91,7 @@ if (-not (Get-Command clerk -ErrorAction SilentlyContinue) -or $Force) {
     $nodeReady = Install-LatestNodeWithNvm
 
     if ($nodeReady -and (Get-Command npm -ErrorAction SilentlyContinue)) {
+      Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
       npm install -g @clerk/cli
     }
     else {
