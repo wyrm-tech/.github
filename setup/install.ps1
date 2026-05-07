@@ -149,16 +149,26 @@ else {
   Write-Host "✓ VS Code extensions installed" -ForegroundColor Green
 }
 
-Write-Host "Installing Go version manager (gvm)..." -ForegroundColor Green
+if (-not (Get-Command gvm -ErrorAction SilentlyContinue)) {
+  Write-Host "Installing Go version manager (gvm)..." -ForegroundColor Green
+  [Net.ServicePointManager]::SecurityProtocol = "tls12"
+  Invoke-WebRequest -URI https://github.com/andrewkroh/gvm/releases/download/v0.6.0/gvm-windows-amd64.exe -Outfile C:\Windows\System32\gvm.exe
+  Refresh-Path
+}
+else {
+  Write-Host "✓ gvm already installed" -ForegroundColor Green
+}
 
-[Net.ServicePointManager]::SecurityProtocol = "tls12"
-Invoke-WebRequest -URI https://github.com/andrewkroh/gvm/releases/download/v0.6.0/gvm-windows-amd64.exe -Outfile C:\Windows\System32\gvm.exe
-
-Write-Host "Fetching latest stable Go version..." -ForegroundColor Cyan
-$latestGo = ((Invoke-RestMethod -Uri "https://go.dev/dl/?mode=json") | Select-Object -First 1).version -replace '^go', ''
-Write-Host "Installing Go $latestGo..." -ForegroundColor Cyan
-gvm --format=powershell $latestGo | Invoke-Expression
-go version
+if (-not (Get-Command go -ErrorAction SilentlyContinue)) {
+  Write-Host "Fetching latest stable Go version..." -ForegroundColor Cyan
+  $latestGo = ((Invoke-RestMethod -Uri "https://go.dev/dl/?mode=json") | Select-Object -First 1).version -replace '^go', ''
+  Write-Host "Installing Go $latestGo..." -ForegroundColor Cyan
+  gvm --format=powershell $latestGo | Invoke-Expression
+}
+else {
+  Write-Host "✓ Go already installed" -ForegroundColor Green
+  go version
+}
 
 Write-Host "Installing Go tools..." -ForegroundColor Green
 go install golang.org/x/tools/gopls@latest
