@@ -7,6 +7,44 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Refresh-Path {
+  $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
+  $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
+
+  if ([string]::IsNullOrWhiteSpace($machinePath)) {
+    $env:Path = $userPath
+  }
+  elseif ([string]::IsNullOrWhiteSpace($userPath)) {
+    $env:Path = $machinePath
+  }
+  else {
+    $env:Path = "$machinePath;$userPath"
+  }
+}
+
+function Install-LatestNodeWithNvm {
+  if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
+    Write-Host "✗ nvm not found in PATH. Ensure nvm-windows is installed." -ForegroundColor Red
+    return $false
+  }
+
+  try {
+    Write-Host "Installing latest Node.js with nvm..." -ForegroundColor Cyan
+    nvm install latest
+
+    Write-Host "Using latest Node.js with nvm..." -ForegroundColor Cyan
+    nvm use latest
+
+    # Ensure npm/node shims from the selected nvm version are picked up.
+    Refresh-Path
+    return $true
+  }
+  catch {
+    Write-Host "✗ Failed to install/use latest Node.js with nvm: $_" -ForegroundColor Red
+    return $false
+  }
+}
+
 Write-Host "Installing dependencies..." -ForegroundColor Green
 
 # Install winget packages
@@ -24,6 +62,8 @@ catch {
 
 Write-Host "Installing packages from winget.json..." -ForegroundColor Cyan
 winget import --import-file $wingetJson --accept-package-agreements --accept-source-agreements
+
+Refresh-Path
 
 Write-Host "Installing Basecamp and Clerk CLIs..." -ForegroundColor Green
 
@@ -44,13 +84,17 @@ else {
 
 # Install Clerk CLI
 if (-not (Get-Command clerk -ErrorAction SilentlyContinue) -or $Force) {
+  Write-Host "Refreshing PATH for current PowerShell session..." -ForegroundColor Cyan
+
   Write-Host "Installing Clerk CLI..." -ForegroundColor Cyan
   try {
-    if (Get-Command npm -ErrorAction SilentlyContinue) {
+    $nodeReady = Install-LatestNodeWithNvm
+
+    if ($nodeReady -and (Get-Command npm -ErrorAction SilentlyContinue)) {
       npm install -g @clerk/cli
     }
     else {
-      Write-Host "✗ npm not found. Install Node.js or download Clerk CLI from https://dashboard.clerk.com" -ForegroundColor Red
+      Write-Host "✗ npm not found after nvm setup. Install Node.js manually or download Clerk CLI from https://dashboard.clerk.com" -ForegroundColor Red
     }
   }
   catch {

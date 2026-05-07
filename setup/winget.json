@@ -21,13 +21,27 @@
         { "PackageIdentifier": "Microsoft.VisualStudioCode" },
         { "PackageIdentifier": "Microsoft.WSL" },
         { "PackageIdentifier": "MongoDB.Compass.Community" },
-        { "PackageIdentifier": "OpenJS.NodeJS.LTS" },
         { "PackageIdentifier": "CoreyButler.NVMforWindows" },
         { "PackageIdentifier": "ngrok.ngrok" },
         { "PackageIdentifier": "OpenAI.Codex" },
         { "PackageIdentifier": "Postman.Postman" },
         { "PackageIdentifier": "Stripe.StripeCLI" }
       ]
-    }
+    },
+    {
+      "SourceDetails" : 
+			{
+				"Argument" : "https://storeedgefd.dsx.mp.microsoft.com/v9.0",
+				"Identifier" : "StoreEdgeFD",
+				"Name" : "msstore",
+				"Type" : "Microsoft.Rest"
+			},
+			"Packages" : 
+			[
+				{
+					"PackageIdentifier" : "9PLM9XGG6VKS"
+				}
+			]			
+		}
   ]
 }
