@@ -173,9 +173,36 @@ else {
 if (Get-Command go -ErrorAction SilentlyContinue) {
   $goRoot = go env GOROOT
   if (-not [string]::IsNullOrWhiteSpace($goRoot)) {
+    $goBin = Join-Path $goRoot "bin"
     $env:GOROOT = $goRoot
     [Environment]::SetEnvironmentVariable("GOROOT", $goRoot, "User")
     Write-Host "✓ GOROOT set to $goRoot" -ForegroundColor Green
+
+    $currentUserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+    $userPathEntries = @()
+    if (-not [string]::IsNullOrWhiteSpace($currentUserPath)) {
+      $userPathEntries = $currentUserPath -split ';'
+    }
+
+    if ($userPathEntries -notcontains $goBin) {
+      if ([string]::IsNullOrWhiteSpace($currentUserPath)) {
+        $updatedUserPath = $goBin
+      }
+      else {
+        $updatedUserPath = "$currentUserPath;$goBin"
+      }
+
+      [Environment]::SetEnvironmentVariable("Path", $updatedUserPath, "User")
+      Write-Host "✓ Added $goBin to user PATH" -ForegroundColor Green
+    }
+    else {
+      Write-Host "✓ $goBin already in user PATH" -ForegroundColor Green
+    }
+
+    if (($env:Path -split ';') -notcontains $goBin) {
+      $env:Path = "$env:Path;$goBin"
+      Write-Host "✓ Added $goBin to current session PATH" -ForegroundColor Green
+    }
   }
   else {
     Write-Host "⚠ Could not determine GOROOT from 'go env GOROOT'" -ForegroundColor Yellow
