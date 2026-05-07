@@ -210,6 +210,31 @@ install_latest_go_with_goenv() {
   echo "✓ Set global Go version to ${latest_go_version}"
 }
 
+brew_bundle_check_with_fallback() {
+  local brewfile="$1"
+
+  if brew bundle check --file="$brewfile" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  if HOMEBREW_NO_INSTALL_FROM_API=1 brew bundle check --file="$brewfile" >/dev/null 2>&1; then
+    return 0
+  fi
+
+  return 1
+}
+
+brew_bundle_install_with_fallback() {
+  local brewfile="$1"
+
+  if brew bundle --file="$brewfile"; then
+    return 0
+  fi
+
+  echo "Retrying brew bundle with HOMEBREW_NO_INSTALL_FROM_API=1 due to Homebrew API/cask issues..."
+  HOMEBREW_NO_INSTALL_FROM_API=1 brew bundle --file="$brewfile"
+}
+
 # Install all Homebrew packages from Brewfile
 brewfile_tmp="$(mktemp "${TMPDIR:-/tmp}/wyrmtech-brewfile.XXXXXX")"
 go_brewfile_tmp="$(mktemp "${TMPDIR:-/tmp}/wyrmtech-go-brewfile.XXXXXX")"
@@ -217,11 +242,11 @@ trap 'rm -f "$brewfile_tmp" "$go_brewfile_tmp"' EXIT
 
 curl -fsSL https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/Brewfile -o "$brewfile_tmp"
 
-if brew bundle check --file="$brewfile_tmp" >/dev/null 2>&1; then
+if brew_bundle_check_with_fallback "$brewfile_tmp"; then
   echo "✓ Homebrew packages already installed"
 else
   echo "Installing Homebrew packages from Brewfile..."
-  brew bundle --file="$brewfile_tmp"
+  brew_bundle_install_with_fallback "$brewfile_tmp"
 fi
 
 persist_goenv_init_for_user_shell
@@ -231,11 +256,11 @@ sync_codex_rules
 # Install Go-based tools only after goenv has installed and configured Go.
 curl -fsSL https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/Brewfile.goinstalls -o "$go_brewfile_tmp"
 
-if brew bundle check --file="$go_brewfile_tmp" >/dev/null 2>&1; then
+if brew_bundle_check_with_fallback "$go_brewfile_tmp"; then
   echo "✓ Go Brewfile tools already installed"
 else
   echo "Installing Go tools from Brewfile.goinstalls..."
-  brew bundle --file="$go_brewfile_tmp"
+  brew_bundle_install_with_fallback "$go_brewfile_tmp"
 fi
 
 echo "✓ Installation complete"
