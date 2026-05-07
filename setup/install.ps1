@@ -92,7 +92,7 @@ if (-not (Get-Command clerk -ErrorAction SilentlyContinue) -or $Force) {
 
     if ($nodeReady -and (Get-Command npm -ErrorAction SilentlyContinue)) {
       Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-      npm install -g @clerk/cli
+      npm install -g clerk
     }
     else {
       Write-Host "✗ npm not found after nvm setup. Install Node.js manually or download Clerk CLI from https://dashboard.clerk.com" -ForegroundColor Red
