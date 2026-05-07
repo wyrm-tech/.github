@@ -7,7 +7,7 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-function Refresh-Path {
+function Sync-Path {
   $machinePath = [Environment]::GetEnvironmentVariable("Path", "Machine")
   $userPath = [Environment]::GetEnvironmentVariable("Path", "User")
 
@@ -36,7 +36,7 @@ function Install-LatestNodeWithNvm {
     nvm use latest
 
     # Ensure npm/node shims from the selected nvm version are picked up.
-    Refresh-Path
+    Sync-Path
     return $true
   }
   catch {
@@ -63,7 +63,7 @@ catch {
 Write-Host "Installing packages from winget.json..." -ForegroundColor Cyan
 winget import --import-file $wingetJson --accept-package-agreements --accept-source-agreements
 
-Refresh-Path
+Sync-Path
 
 Write-Host "Installing Basecamp and Clerk CLIs..." -ForegroundColor Green
 
@@ -153,7 +153,7 @@ if (-not (Get-Command gvm -ErrorAction SilentlyContinue)) {
   Write-Host "Installing Go version manager (gvm)..." -ForegroundColor Green
   [Net.ServicePointManager]::SecurityProtocol = "tls12"
   Invoke-WebRequest -URI https://github.com/andrewkroh/gvm/releases/download/v0.6.0/gvm-windows-amd64.exe -Outfile C:\Windows\System32\gvm.exe
-  Refresh-Path
+  Sync-Path
 }
 else {
   Write-Host "✓ gvm already installed" -ForegroundColor Green
@@ -213,6 +213,22 @@ else {
 }
 
 Write-Host "Installing Go tools..." -ForegroundColor Green
-go install golang.org/x/tools/gopls@latest
-go install honnef.co/go/tools/cmd/staticcheck@latest
+$goplsExe = Join-Path $env:USERPROFILE "go\bin\gopls.exe"
+if (-not (Test-Path $goplsExe) -or $Force) {
+  Write-Host "Installing gopls..." -ForegroundColor Cyan
+  go install golang.org/x/tools/gopls@latest
+}
+else {
+  Write-Host "✓ gopls already installed at $goplsExe" -ForegroundColor Green
+}
+
+$staticcheckExe = Join-Path $env:USERPROFILE "go\bin\staticcheck.exe"
+if (-not (Test-Path $staticcheckExe) -or $Force) {
+  Write-Host "Installing staticcheck..." -ForegroundColor Cyan
+  go install honnef.co/go/tools/cmd/staticcheck@latest
+}
+else {
+  Write-Host "✓ staticcheck already installed at $staticcheckExe" -ForegroundColor Green
+}
+
 Write-Host "✓ Go tools installed" -ForegroundColor Green
