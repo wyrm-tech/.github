@@ -170,6 +170,21 @@ else {
   go version
 }
 
+if (Get-Command go -ErrorAction SilentlyContinue) {
+  $goRoot = go env GOROOT
+  if (-not [string]::IsNullOrWhiteSpace($goRoot)) {
+    $env:GOROOT = $goRoot
+    [Environment]::SetEnvironmentVariable("GOROOT", $goRoot, "User")
+    Write-Host "✓ GOROOT set to $goRoot" -ForegroundColor Green
+  }
+  else {
+    Write-Host "⚠ Could not determine GOROOT from 'go env GOROOT'" -ForegroundColor Yellow
+  }
+}
+else {
+  Write-Host "⚠ Skipping GOROOT setup because 'go' is not available" -ForegroundColor Yellow
+}
+
 Write-Host "Installing Go tools..." -ForegroundColor Green
 go install golang.org/x/tools/gopls@latest
 go install honnef.co/go/tools/cmd/staticcheck@latest
