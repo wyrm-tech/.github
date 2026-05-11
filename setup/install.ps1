@@ -278,4 +278,13 @@ else {
   Write-Host "✓ staticcheck already installed at $staticcheckExe" -ForegroundColor Green
 }
 
+$qboExe = Join-Path $env:USERPROFILE "go\bin\qbo.exe"
+if (-not (Test-Path $qboExe) -or $Force) {
+  Write-Host "Installing qbo..." -ForegroundColor Cyan
+  go install github.com/voska/qbo-cli/cmd/qbo@latest
+}
+else {
+  Write-Host "✓ qbo already installed at $qboExe" -ForegroundColor Green
+}
+
 Write-Host "✓ Go tools installed" -ForegroundColor Green
