@@ -247,6 +247,20 @@ install_latest_go_with_goenv() {
   echo "✓ Set global Go version to ${latest_go_version}"
 }
 
+install_ramp_cli() {
+  if command -v ramp &> /dev/null; then
+    echo "✓ Ramp CLI already installed"
+    return
+  fi
+
+  echo "Installing Ramp CLI..."
+  if curl -fsSL https://agents.ramp.com/install.sh | sh; then
+    echo "✓ Ramp CLI installed"
+  else
+    echo "⚠ Failed to install Ramp CLI"
+  fi
+}
+
 brew_bundle_check_with_fallback() {
   local brewfile="$1"
 
@@ -295,6 +309,7 @@ fi
 persist_goenv_init_for_user_shell
 install_latest_go_with_goenv
 sync_codex_rules
+install_ramp_cli
 
 # Install Go-based tools only after goenv has installed and configured Go.
 curl -fsSL https://raw.githubusercontent.com/wyrm-tech/.github/refs/heads/main/setup/Brewfile.goinstalls -o "$go_brewfile_tmp"

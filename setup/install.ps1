@@ -22,6 +22,78 @@ function Sync-Path {
   }
 }
 
+function Add-UserPathEntries {
+  param(
+    [string[]]$Entries
+  )
+
+  $currentUserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+  $userPathEntries = @()
+
+  if (-not [string]::IsNullOrWhiteSpace($currentUserPath)) {
+    $userPathEntries = $currentUserPath -split ';'
+  }
+
+  $normalizedExisting = New-Object 'System.Collections.Generic.HashSet[string]' ([System.StringComparer]::OrdinalIgnoreCase)
+  foreach ($entry in $userPathEntries) {
+    if (-not [string]::IsNullOrWhiteSpace($entry)) {
+      [void]$normalizedExisting.Add($entry.Trim())
+    }
+  }
+
+  $addedEntries = @()
+  foreach ($entry in $Entries) {
+    if (-not [string]::IsNullOrWhiteSpace($entry) -and (Test-Path $entry) -and $normalizedExisting.Add($entry)) {
+      $addedEntries += $entry
+    }
+  }
+
+  if ($addedEntries.Count -eq 0) {
+    return @()
+  }
+
+  $updatedEntries = @($userPathEntries | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }) + $addedEntries
+  [Environment]::SetEnvironmentVariable("Path", ($updatedEntries -join ';'), "User")
+
+  foreach ($entry in $addedEntries) {
+    if (($env:Path -split ';') -notcontains $entry) {
+      $env:Path = "$env:Path;$entry"
+    }
+  }
+
+  return $addedEntries
+}
+
+function Ensure-GitBashOnPath {
+  $gitRoots = @(
+    (Join-Path $env:ProgramFiles "Git"),
+    (Join-Path ${env:ProgramFiles(x86)} "Git"),
+    (Join-Path $env:LocalAppData "Programs\Git")
+  ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) -and (Test-Path $_) }
+
+  if ($gitRoots.Count -eq 0) {
+    Write-Host "⚠ Git for Windows install path not found — skipping Git Bash PATH update" -ForegroundColor Yellow
+    return
+  }
+
+  $gitRoot = $gitRoots[0]
+  $addedEntries = Add-UserPathEntries -Entries @(
+    $gitRoot,
+    (Join-Path $gitRoot "cmd"),
+    (Join-Path $gitRoot "bin")
+  )
+
+  if ($addedEntries.Count -gt 0) {
+    Write-Host "✓ Added Git Bash paths to user PATH" -ForegroundColor Green
+    foreach ($entry in $addedEntries) {
+      Write-Host "  - $entry" -ForegroundColor Green
+    }
+  }
+  else {
+    Write-Host "✓ Git Bash paths already in user PATH" -ForegroundColor Green
+  }
+}
+
 function Install-LatestNodeWithNvm {
   if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
     Write-Host "✗ nvm not found in PATH. Ensure nvm-windows is installed." -ForegroundColor Red
@@ -42,6 +114,35 @@ function Install-LatestNodeWithNvm {
   catch {
     Write-Host "✗ Failed to install/use latest Node.js with nvm: $_" -ForegroundColor Red
     return $false
+  }
+}
+
+function Install-RampCli {
+  if (Get-Command ramp -ErrorAction SilentlyContinue) {
+    Write-Host "✓ Ramp CLI already installed" -ForegroundColor Green
+    return
+  }
+
+  if (-not (Get-Command bash -ErrorAction SilentlyContinue)) {
+    Write-Host "⚠ bash not found in PATH — skipping Ramp CLI install" -ForegroundColor Yellow
+    return
+  }
+
+  Write-Host "Installing Ramp CLI..." -ForegroundColor Cyan
+
+  try {
+    bash -lc "curl -fsSL https://agents.ramp.com/install.sh | sh"
+    Sync-Path
+
+    if (Get-Command ramp -ErrorAction SilentlyContinue) {
+      Write-Host "✓ Ramp CLI installed" -ForegroundColor Green
+    }
+    else {
+      Write-Host "⚠ Ramp CLI install completed, but 'ramp' is not yet available in PATH for this session" -ForegroundColor Yellow
+    }
+  }
+  catch {
+    Write-Host "✗ Failed to install Ramp CLI: $_" -ForegroundColor Red
   }
 }
 
@@ -111,6 +212,7 @@ winget import --import-file $wingetJson --accept-package-agreements --accept-sou
 Sync-CodexRules
 
 Sync-Path
+Ensure-GitBashOnPath
 
 Write-Host "Installing Basecamp and Clerk CLIs..." -ForegroundColor Green
 
@@ -152,6 +254,8 @@ if (-not (Get-Command clerk -ErrorAction SilentlyContinue) -or $Force) {
 else {
   Write-Host "✓ Clerk CLI already installed" -ForegroundColor Green
 }
+
+Install-RampCli
 
 Write-Host "✓ CLI installation complete" -ForegroundColor Green
 
