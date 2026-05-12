@@ -287,4 +287,9 @@ else {
   Write-Host "✓ qbo already installed at $qboExe" -ForegroundColor Green
 }
 
+$qboRedirectUri = "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
+[Environment]::SetEnvironmentVariable("QBO_REDIRECT_URI", $qboRedirectUri, "User")
+$env:QBO_REDIRECT_URI = $qboRedirectUri
+Write-Host "✓ QBO_REDIRECT_URI set for user profile and current session" -ForegroundColor Green
+
 Write-Host "✓ Go tools installed" -ForegroundColor Green

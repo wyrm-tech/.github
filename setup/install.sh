@@ -183,6 +183,43 @@ sync_codex_rules() {
   fi
 }
 
+persist_qbo_redirect_uri_for_user_shell() {
+  local qbo_redirect_uri_line='export QBO_REDIRECT_URI=https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl'
+  local shell_name=""
+
+  shell_name="$(basename "${SHELL:-}")"
+
+  add_qbo_line_if_missing() {
+    local target_file="$1"
+
+    if [[ ! -f "$target_file" ]]; then
+      touch "$target_file"
+    fi
+
+    if ! grep -Fq "$qbo_redirect_uri_line" "$target_file"; then
+      {
+        echo ""
+        echo "# Added by WyrmTech setup"
+        echo "$qbo_redirect_uri_line"
+      } >> "$target_file"
+      echo "Added QBO_REDIRECT_URI to $target_file"
+    fi
+  }
+
+  if [[ "$shell_name" == "zsh" ]]; then
+    add_qbo_line_if_missing "$HOME/.zprofile"
+    add_qbo_line_if_missing "$HOME/.zshrc"
+  elif [[ "$shell_name" == "bash" ]]; then
+    add_qbo_line_if_missing "$HOME/.bash_profile"
+    add_qbo_line_if_missing "$HOME/.bashrc"
+  else
+    add_qbo_line_if_missing "$HOME/.profile"
+  fi
+
+  export QBO_REDIRECT_URI="https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
+  echo "✓ QBO_REDIRECT_URI set for current session"
+}
+
 install_latest_go_with_goenv() {
   local latest_go_version=""
 
@@ -247,6 +284,12 @@ if brew_bundle_check_with_fallback "$brewfile_tmp"; then
 else
   echo "Installing Homebrew packages from Brewfile..."
   brew_bundle_install_with_fallback "$brewfile_tmp"
+fi
+
+if command -v qbo &> /dev/null; then
+  persist_qbo_redirect_uri_for_user_shell
+else
+  echo "⚠ qbo not found after Homebrew installation - skipping QBO_REDIRECT_URI setup"
 fi
 
 persist_goenv_init_for_user_shell
