@@ -95,12 +95,16 @@ function Ensure-GitBashOnPath {
 }
 
 function Install-LatestNodeWithNvm {
+  # Ensure nvm is available in the current session
+  Sync-Path
+
   if (-not (Get-Command nvm -ErrorAction SilentlyContinue)) {
     Write-Host "✗ nvm not found in PATH. Ensure nvm-windows is installed." -ForegroundColor Red
     return $false
   }
 
   try {
+    
     Write-Host "Installing latest Node.js with nvm..." -ForegroundColor Cyan
     nvm install latest
 
@@ -233,8 +237,6 @@ else {
 
 # Install Clerk CLI
 if (-not (Get-Command clerk -ErrorAction SilentlyContinue) -or $Force) {
-  Write-Host "Refreshing PATH for current PowerShell session..." -ForegroundColor Cyan
-
   Write-Host "Installing Clerk CLI..." -ForegroundColor Cyan
   try {
     $nodeReady = Install-LatestNodeWithNvm
@@ -382,13 +384,41 @@ else {
   Write-Host "✓ staticcheck already installed at $staticcheckExe" -ForegroundColor Green
 }
 
-$qboExe = Join-Path $env:USERPROFILE "go\bin\qbo.exe"
+$goBinDir = Join-Path $env:USERPROFILE "go\bin"
+$qboExe = Join-Path $goBinDir "qbo.exe"
 if (-not (Test-Path $qboExe) -or $Force) {
   Write-Host "Installing qbo..." -ForegroundColor Cyan
   go install github.com/voska/qbo-cli/cmd/qbo@latest
 }
 else {
   Write-Host "✓ qbo already installed at $qboExe" -ForegroundColor Green
+}
+
+# Ensure go bin directory is in PATH
+$currentUserPath = [Environment]::GetEnvironmentVariable("Path", "User")
+$userPathEntries = @()
+if (-not [string]::IsNullOrWhiteSpace($currentUserPath)) {
+  $userPathEntries = $currentUserPath -split ';'
+}
+
+if ($userPathEntries -notcontains $goBinDir) {
+  if ([string]::IsNullOrWhiteSpace($currentUserPath)) {
+    $updatedUserPath = $goBinDir
+  }
+  else {
+    $updatedUserPath = "$currentUserPath;$goBinDir"
+  }
+
+  [Environment]::SetEnvironmentVariable("Path", $updatedUserPath, "User")
+  Write-Host "✓ Added $goBinDir to user PATH" -ForegroundColor Green
+}
+else {
+  Write-Host "✓ $goBinDir already in user PATH" -ForegroundColor Green
+}
+
+if (($env:Path -split ';') -notcontains $goBinDir) {
+  $env:Path = "$env:Path;$goBinDir"
+  Write-Host "✓ Added $goBinDir to current session PATH" -ForegroundColor Green
 }
 
 $qboRedirectUri = "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"

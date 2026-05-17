@@ -183,41 +183,49 @@ sync_codex_rules() {
   fi
 }
 
-persist_qbo_redirect_uri_for_user_shell() {
+persist_qbo_env_for_user_shell() {
   local qbo_redirect_uri_line='export QBO_REDIRECT_URI=https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl'
+  local go_bin_path_line='export PATH="$HOME/go/bin:$PATH"'
   local shell_name=""
 
   shell_name="$(basename "${SHELL:-}")"
 
   add_qbo_line_if_missing() {
     local target_file="$1"
+    local line="$2"
 
     if [[ ! -f "$target_file" ]]; then
       touch "$target_file"
     fi
 
-    if ! grep -Fq "$qbo_redirect_uri_line" "$target_file"; then
+    if ! grep -Fq "$line" "$target_file"; then
       {
         echo ""
         echo "# Added by WyrmTech setup"
-        echo "$qbo_redirect_uri_line"
+        echo "$line"
       } >> "$target_file"
-      echo "Added QBO_REDIRECT_URI to $target_file"
+      echo "Added to $target_file: $line"
     fi
   }
 
   if [[ "$shell_name" == "zsh" ]]; then
-    add_qbo_line_if_missing "$HOME/.zprofile"
-    add_qbo_line_if_missing "$HOME/.zshrc"
+    add_qbo_line_if_missing "$HOME/.zprofile" "$go_bin_path_line"
+    add_qbo_line_if_missing "$HOME/.zprofile" "$qbo_redirect_uri_line"
+    add_qbo_line_if_missing "$HOME/.zshrc" "$go_bin_path_line"
+    add_qbo_line_if_missing "$HOME/.zshrc" "$qbo_redirect_uri_line"
   elif [[ "$shell_name" == "bash" ]]; then
-    add_qbo_line_if_missing "$HOME/.bash_profile"
-    add_qbo_line_if_missing "$HOME/.bashrc"
+    add_qbo_line_if_missing "$HOME/.bash_profile" "$go_bin_path_line"
+    add_qbo_line_if_missing "$HOME/.bash_profile" "$qbo_redirect_uri_line"
+    add_qbo_line_if_missing "$HOME/.bashrc" "$go_bin_path_line"
+    add_qbo_line_if_missing "$HOME/.bashrc" "$qbo_redirect_uri_line"
   else
-    add_qbo_line_if_missing "$HOME/.profile"
+    add_qbo_line_if_missing "$HOME/.profile" "$go_bin_path_line"
+    add_qbo_line_if_missing "$HOME/.profile" "$qbo_redirect_uri_line"
   fi
 
+  export PATH="$HOME/go/bin:$PATH"
   export QBO_REDIRECT_URI="https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
-  echo "✓ QBO_REDIRECT_URI set for current session"
+  echo "✓ QBO environment configured for current session"
 }
 
 install_latest_go_with_goenv() {
@@ -301,9 +309,9 @@ else
 fi
 
 if command -v qbo &> /dev/null; then
-  persist_qbo_redirect_uri_for_user_shell
+  persist_qbo_env_for_user_shell
 else
-  echo "⚠ qbo not found after Homebrew installation - skipping QBO_REDIRECT_URI setup"
+  echo "⚠ qbo not found after Homebrew installation - skipping QBO environment setup"
 fi
 
 persist_goenv_init_for_user_shell
