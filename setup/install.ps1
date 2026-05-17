@@ -422,9 +422,15 @@ if (($env:Path -split ';') -notcontains $goBinDir) {
 }
 
 $qboRedirectUri = "https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
-[Environment]::SetEnvironmentVariable("QBO_REDIRECT_URI", $qboRedirectUri, "User")
-$env:QBO_REDIRECT_URI = $qboRedirectUri
-Write-Host "✓ QBO_REDIRECT_URI set for user profile and current session" -ForegroundColor Green
+$existingQboRedirectUri = [Environment]::GetEnvironmentVariable("QBO_REDIRECT_URI", "User")
+if ([string]::IsNullOrWhiteSpace($existingQboRedirectUri) -and [string]::IsNullOrWhiteSpace($env:QBO_REDIRECT_URI)) {
+  [Environment]::SetEnvironmentVariable("QBO_REDIRECT_URI", $qboRedirectUri, "User")
+  $env:QBO_REDIRECT_URI = $qboRedirectUri
+  Write-Host "✓ QBO_REDIRECT_URI set for user profile and current session" -ForegroundColor Green
+}
+else {
+  Write-Host "✓ QBO_REDIRECT_URI already set — leaving existing value unchanged" -ForegroundColor Green
+}
 
 Write-Host "✓ Go tools installed" -ForegroundColor Green
 
@@ -448,9 +454,15 @@ else {
     }
 
     if ($qboClientId) {
-      [Environment]::SetEnvironmentVariable("QBO_CLIENT_ID", $qboClientId, "User")
-      $env:QBO_CLIENT_ID = $qboClientId
-      Write-Host "✓ QBO_CLIENT_ID set for user profile and current session" -ForegroundColor Green
+      $existingQboClientId = [Environment]::GetEnvironmentVariable("QBO_CLIENT_ID", "User")
+      if ([string]::IsNullOrWhiteSpace($existingQboClientId) -and [string]::IsNullOrWhiteSpace($env:QBO_CLIENT_ID)) {
+        [Environment]::SetEnvironmentVariable("QBO_CLIENT_ID", $qboClientId, "User")
+        $env:QBO_CLIENT_ID = $qboClientId
+        Write-Host "✓ QBO_CLIENT_ID set for user profile and current session" -ForegroundColor Green
+      }
+      else {
+        Write-Host "✓ QBO_CLIENT_ID already set — leaving existing value unchanged" -ForegroundColor Green
+      }
     }
     else {
       Write-Host "⚠ Could not fetch QBO_CLIENT_ID from GitHub repository" -ForegroundColor Yellow
@@ -458,9 +470,15 @@ else {
     }
 
     if ($qboClientSecret) {
-      [Environment]::SetEnvironmentVariable("QBO_CLIENT_SECRET", $qboClientSecret, "User")
-      $env:QBO_CLIENT_SECRET = $qboClientSecret
-      Write-Host "✓ QBO_CLIENT_SECRET set for user profile and current session" -ForegroundColor Green
+      $existingQboClientSecret = [Environment]::GetEnvironmentVariable("QBO_CLIENT_SECRET", "User")
+      if ([string]::IsNullOrWhiteSpace($existingQboClientSecret) -and [string]::IsNullOrWhiteSpace($env:QBO_CLIENT_SECRET)) {
+        [Environment]::SetEnvironmentVariable("QBO_CLIENT_SECRET", $qboClientSecret, "User")
+        $env:QBO_CLIENT_SECRET = $qboClientSecret
+        Write-Host "✓ QBO_CLIENT_SECRET set for user profile and current session" -ForegroundColor Green
+      }
+      else {
+        Write-Host "✓ QBO_CLIENT_SECRET already set — leaving existing value unchanged" -ForegroundColor Green
+      }
     }
     else {
       Write-Host "⚠ Could not fetch QBO_CLIENT_SECRET from GitHub repository" -ForegroundColor Yellow

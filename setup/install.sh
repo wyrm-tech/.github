@@ -186,6 +186,7 @@ sync_codex_rules() {
 persist_qbo_env_for_user_shell() {
   local qbo_redirect_uri_line='export QBO_REDIRECT_URI=https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl'
   local go_bin_path_line='export PATH="$HOME/go/bin:$PATH"'
+  local qbo_redirect_uri_already_set="${QBO_REDIRECT_URI:-}"
   local shell_name=""
 
   shell_name="$(basename "${SHELL:-}")"
@@ -210,21 +211,36 @@ persist_qbo_env_for_user_shell() {
 
   if [[ "$shell_name" == "zsh" ]]; then
     add_qbo_line_if_missing "$HOME/.zprofile" "$go_bin_path_line"
-    add_qbo_line_if_missing "$HOME/.zprofile" "$qbo_redirect_uri_line"
+    if [[ -z "$qbo_redirect_uri_already_set" ]]; then
+      add_qbo_line_if_missing "$HOME/.zprofile" "$qbo_redirect_uri_line"
+    fi
     add_qbo_line_if_missing "$HOME/.zshrc" "$go_bin_path_line"
-    add_qbo_line_if_missing "$HOME/.zshrc" "$qbo_redirect_uri_line"
+    if [[ -z "$qbo_redirect_uri_already_set" ]]; then
+      add_qbo_line_if_missing "$HOME/.zshrc" "$qbo_redirect_uri_line"
+    fi
   elif [[ "$shell_name" == "bash" ]]; then
     add_qbo_line_if_missing "$HOME/.bash_profile" "$go_bin_path_line"
-    add_qbo_line_if_missing "$HOME/.bash_profile" "$qbo_redirect_uri_line"
+    if [[ -z "$qbo_redirect_uri_already_set" ]]; then
+      add_qbo_line_if_missing "$HOME/.bash_profile" "$qbo_redirect_uri_line"
+    fi
     add_qbo_line_if_missing "$HOME/.bashrc" "$go_bin_path_line"
-    add_qbo_line_if_missing "$HOME/.bashrc" "$qbo_redirect_uri_line"
+    if [[ -z "$qbo_redirect_uri_already_set" ]]; then
+      add_qbo_line_if_missing "$HOME/.bashrc" "$qbo_redirect_uri_line"
+    fi
   else
     add_qbo_line_if_missing "$HOME/.profile" "$go_bin_path_line"
-    add_qbo_line_if_missing "$HOME/.profile" "$qbo_redirect_uri_line"
+    if [[ -z "$qbo_redirect_uri_already_set" ]]; then
+      add_qbo_line_if_missing "$HOME/.profile" "$qbo_redirect_uri_line"
+    fi
   fi
 
   export PATH="$HOME/go/bin:$PATH"
-  export QBO_REDIRECT_URI="https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
+  if [[ -z "$qbo_redirect_uri_already_set" ]]; then
+    export QBO_REDIRECT_URI="https://developer.intuit.com/v2/OAuth2Playground/RedirectUrl"
+    echo "✓ QBO_REDIRECT_URI set for current session"
+  else
+    echo "✓ QBO_REDIRECT_URI already set - leaving existing value unchanged"
+  fi
   echo "✓ QBO environment configured for current session"
 }
 
@@ -353,6 +369,11 @@ persist_qbo_credentials_for_user_shell() {
     local var_name="$2"
     local var_value="$3"
     local var_line="export ${var_name}=${var_value}"
+    local existing_value="${!var_name:-}"
+
+    if [[ -n "$existing_value" ]]; then
+      return
+    fi
 
     if [[ ! -f "$target_file" ]]; then
       touch "$target_file"
@@ -383,8 +404,19 @@ persist_qbo_credentials_for_user_shell() {
     add_qbo_cred_line_if_missing "$HOME/.profile" "QBO_CLIENT_SECRET" "$qbo_client_secret"
   fi
 
-  export QBO_CLIENT_ID="$qbo_client_id"
-  export QBO_CLIENT_SECRET="$qbo_client_secret"
+  if [[ -z "${QBO_CLIENT_ID:-}" ]]; then
+    export QBO_CLIENT_ID="$qbo_client_id"
+    echo "✓ QBO_CLIENT_ID set for current session"
+  else
+    echo "✓ QBO_CLIENT_ID already set - leaving existing value unchanged"
+  fi
+
+  if [[ -z "${QBO_CLIENT_SECRET:-}" ]]; then
+    export QBO_CLIENT_SECRET="$qbo_client_secret"
+    echo "✓ QBO_CLIENT_SECRET set for current session"
+  else
+    echo "✓ QBO_CLIENT_SECRET already set - leaving existing value unchanged"
+  fi
   echo "✓ QBO credentials set for current session"
 }
 
