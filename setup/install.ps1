@@ -454,6 +454,7 @@ else {
     }
     else {
       Write-Host "⚠ Could not fetch QBO_CLIENT_ID from GitHub repository" -ForegroundColor Yellow
+      Write-Host "ℹ This is expected if you are not on the finance team" -ForegroundColor Yellow
     }
 
     if ($qboClientSecret) {
@@ -463,11 +464,13 @@ else {
     }
     else {
       Write-Host "⚠ Could not fetch QBO_CLIENT_SECRET from GitHub repository" -ForegroundColor Yellow
+      Write-Host "ℹ This is expected if you are not on the finance team" -ForegroundColor Yellow
     }
 
     Sync-Path
   }
   catch {
     Write-Host "⚠ Failed to fetch QBO credentials from GitHub: $_" -ForegroundColor Yellow
+    Write-Host "ℹ This is expected if you are not on the finance team" -ForegroundColor Yellow
   }
 }

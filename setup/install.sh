@@ -344,6 +344,7 @@ persist_qbo_credentials_for_user_shell() {
 
   if [[ -z "$qbo_client_id" || -z "$qbo_client_secret" ]]; then
     echo "⚠ Could not fetch QBO credentials from GitHub repository"
+    echo "ℹ This is expected if you are not on the finance team"
     return
   fi
 
