@@ -314,6 +314,81 @@ else
   echo "⚠ qbo not found after Homebrew installation - skipping QBO environment setup"
 fi
 
+persist_qbo_credentials_for_user_shell() {
+  local qbo_client_id_line='export QBO_CLIENT_ID='
+  local qbo_client_secret_line='export QBO_CLIENT_SECRET='
+  local shell_name=""
+
+  shell_name="$(basename "${SHELL:-}")"
+
+  if ! command -v gh &> /dev/null; then
+    echo "⚠ GitHub CLI not found — skipping QBO credentials fetch"
+    return
+  fi
+
+  echo "Fetching QBO credentials from GitHub repository..."
+  
+  local qbo_client_id=""
+  local qbo_client_secret=""
+
+  qbo_client_id=$(gh variable get QBO_CLIENT_ID --env qbo --repo wyrm-tech/fluffy-financials 2>/dev/null || true)
+  qbo_client_secret=$(gh variable get QBO_CLIENT_SECRET --env qbo --repo wyrm-tech/fluffy-financials 2>/dev/null || true)
+
+  # Fallback to repository-level variables if environment-scoped variables are not found.
+  if [[ -z "$qbo_client_id" ]]; then
+    qbo_client_id=$(gh variable get QBO_CLIENT_ID --repo wyrm-tech/fluffy-financials 2>/dev/null || true)
+  fi
+  if [[ -z "$qbo_client_secret" ]]; then
+    qbo_client_secret=$(gh variable get QBO_CLIENT_SECRET --repo wyrm-tech/fluffy-financials 2>/dev/null || true)
+  fi
+
+  if [[ -z "$qbo_client_id" || -z "$qbo_client_secret" ]]; then
+    echo "⚠ Could not fetch QBO credentials from GitHub repository"
+    return
+  fi
+
+  add_qbo_cred_line_if_missing() {
+    local target_file="$1"
+    local var_name="$2"
+    local var_value="$3"
+    local var_line="export ${var_name}=${var_value}"
+
+    if [[ ! -f "$target_file" ]]; then
+      touch "$target_file"
+    fi
+
+    if ! grep -Fq "export $var_name" "$target_file"; then
+      {
+        echo ""
+        echo "# Added by WyrmTech setup"
+        echo "$var_line"
+      } >> "$target_file"
+      echo "Added to $target_file: export $var_name"
+    fi
+  }
+
+  if [[ "$shell_name" == "zsh" ]]; then
+    add_qbo_cred_line_if_missing "$HOME/.zprofile" "QBO_CLIENT_ID" "$qbo_client_id"
+    add_qbo_cred_line_if_missing "$HOME/.zprofile" "QBO_CLIENT_SECRET" "$qbo_client_secret"
+    add_qbo_cred_line_if_missing "$HOME/.zshrc" "QBO_CLIENT_ID" "$qbo_client_id"
+    add_qbo_cred_line_if_missing "$HOME/.zshrc" "QBO_CLIENT_SECRET" "$qbo_client_secret"
+  elif [[ "$shell_name" == "bash" ]]; then
+    add_qbo_cred_line_if_missing "$HOME/.bash_profile" "QBO_CLIENT_ID" "$qbo_client_id"
+    add_qbo_cred_line_if_missing "$HOME/.bash_profile" "QBO_CLIENT_SECRET" "$qbo_client_secret"
+    add_qbo_cred_line_if_missing "$HOME/.bashrc" "QBO_CLIENT_ID" "$qbo_client_id"
+    add_qbo_cred_line_if_missing "$HOME/.bashrc" "QBO_CLIENT_SECRET" "$qbo_client_secret"
+  else
+    add_qbo_cred_line_if_missing "$HOME/.profile" "QBO_CLIENT_ID" "$qbo_client_id"
+    add_qbo_cred_line_if_missing "$HOME/.profile" "QBO_CLIENT_SECRET" "$qbo_client_secret"
+  fi
+
+  export QBO_CLIENT_ID="$qbo_client_id"
+  export QBO_CLIENT_SECRET="$qbo_client_secret"
+  echo "✓ QBO credentials set for current session"
+}
+
+persist_qbo_credentials_for_user_shell
+
 persist_goenv_init_for_user_shell
 install_latest_go_with_goenv
 sync_codex_rules

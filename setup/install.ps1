@@ -427,3 +427,47 @@ $env:QBO_REDIRECT_URI = $qboRedirectUri
 Write-Host "✓ QBO_REDIRECT_URI set for user profile and current session" -ForegroundColor Green
 
 Write-Host "✓ Go tools installed" -ForegroundColor Green
+
+# Fetch QBO credentials from GitHub repository
+Write-Host "Fetching QBO credentials from GitHub repository..." -ForegroundColor Cyan
+
+if (-not (Get-Command gh -ErrorAction SilentlyContinue)) {
+  Write-Host "⚠ GitHub CLI not found — skipping QBO credentials fetch" -ForegroundColor Yellow
+}
+else {
+  try {
+    $qboClientId = gh variable get QBO_CLIENT_ID --env qbo --repo wyrm-tech/fluffy-financials 2>$null
+    $qboClientSecret = gh variable get QBO_CLIENT_SECRET --env qbo --repo wyrm-tech/fluffy-financials 2>$null
+
+    # Fallback to repository-level variables if environment-scoped variables are not found.
+    if (-not $qboClientId) {
+      $qboClientId = gh variable get QBO_CLIENT_ID --repo wyrm-tech/fluffy-financials 2>$null
+    }
+    if (-not $qboClientSecret) {
+      $qboClientSecret = gh variable get QBO_CLIENT_SECRET --repo wyrm-tech/fluffy-financials 2>$null
+    }
+
+    if ($qboClientId) {
+      [Environment]::SetEnvironmentVariable("QBO_CLIENT_ID", $qboClientId, "User")
+      $env:QBO_CLIENT_ID = $qboClientId
+      Write-Host "✓ QBO_CLIENT_ID set for user profile and current session" -ForegroundColor Green
+    }
+    else {
+      Write-Host "⚠ Could not fetch QBO_CLIENT_ID from GitHub repository" -ForegroundColor Yellow
+    }
+
+    if ($qboClientSecret) {
+      [Environment]::SetEnvironmentVariable("QBO_CLIENT_SECRET", $qboClientSecret, "User")
+      $env:QBO_CLIENT_SECRET = $qboClientSecret
+      Write-Host "✓ QBO_CLIENT_SECRET set for user profile and current session" -ForegroundColor Green
+    }
+    else {
+      Write-Host "⚠ Could not fetch QBO_CLIENT_SECRET from GitHub repository" -ForegroundColor Yellow
+    }
+
+    Sync-Path
+  }
+  catch {
+    Write-Host "⚠ Failed to fetch QBO credentials from GitHub: $_" -ForegroundColor Yellow
+  }
+}
