@@ -25,7 +25,9 @@
         { "PackageIdentifier": "ngrok.ngrok" },
         { "PackageIdentifier": "OpenAI.Codex" },
         { "PackageIdentifier": "Postman.Postman" },
-        { "PackageIdentifier": "Stripe.StripeCLI" }
+        { "PackageIdentifier": "Stripe.StripeCLI" },
+        { "PackageIdentifier": "Anthropic.Claude" },
+        { "PackageIdentifier": "Anthropic.ClaudeCode" }
       ]
     },
     {
